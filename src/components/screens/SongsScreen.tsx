@@ -1,6 +1,58 @@
-import React from 'react';
-import {Text} from 'react-native';
+import React, { useCallback } from 'react';
+
+import { SongListItem } from '../molecules/songs';
+import { Song } from '../../types';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { useSong } from '../../hooks';
+
+const songs: Song[] = [
+  {
+    id: 1,
+    name: 'Map of the Problematic',
+    bpm: 120,
+    canOpenInSequencer: false
+  },
+  {
+    id: 2,
+    name: 'Unsustainable',
+    bpm: 120,
+    canOpenInSequencer: false
+  }
+];
 
 export const SongsScreen = () => {
-  return <Text>Songs Screen</Text>;
+  const { onSelectSong, onEditSong, onPlaySong, onStopSong } = useSong();
+
+  const Seperator = useCallback(() => <View style={styles.seperator} />, []);
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        nestedScrollEnabled
+        keyExtractor={(song) => `${song.id}`}
+        data={songs}
+        ItemSeparatorComponent={Seperator}
+        renderItem={(song) => (
+          <SongListItem
+            song={song.item}
+            onPress={onSelectSong}
+            onPressEdit={onEditSong}
+            onPressPlay={onPlaySong}
+            onPressStop={onStopSong}
+          />
+        )}
+      />
+    </View>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    paddingLeft: 15,
+    paddingRight: 15,
+    height: '100%'
+  },
+  seperator: {
+    height: 15
+  }
+});
