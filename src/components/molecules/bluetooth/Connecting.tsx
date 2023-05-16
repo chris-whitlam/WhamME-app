@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../styles';
 
@@ -13,7 +13,7 @@ export const Connecting = () => {
       />
       <Text style={styles.title}>Connecting to device...</Text>
       <Pressable style={styles.button} disabled>
-        <Text style={styles.buttonText}>Stop Scanning</Text>
+        <ActivityIndicator color={colors.text} />
       </Pressable>
     </>
   );

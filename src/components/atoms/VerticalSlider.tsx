@@ -169,33 +169,39 @@ const VerticalSlider: React.FC<SliderProps> = ({
   const onPanResponderGrant = () => {
     _moveStartValue.value = _value.value;
   };
+
+  let lastValue = -1;
+  const handleChange = (gestureState: PanResponderGestureState) => {
+    if (disabled) {
+      return;
+    }
+
+    const newValue = _calculateValue(gestureState);
+
+    if (lastValue === newValue) {
+      return;
+    }
+
+    lastValue = newValue;
+
+    onChange(newValue);
+  };
+
   const onPanResponderMove = (
     _event: GestureResponderEvent,
     gestureState: PanResponderGestureState
-  ) => {
-    if (disabled) {
-      return;
-    }
-    onChange(_calculateValue(gestureState));
-  };
+  ) => handleChange(gestureState);
+
   const onPanResponderRelease = (
     _event: GestureResponderEvent,
     gestureState: PanResponderGestureState
-  ) => {
-    if (disabled) {
-      return;
-    }
-    onChange(_calculateValue(gestureState));
-  };
+  ) => handleChange(gestureState);
+
   const onPanResponderTerminate = (
     _event: GestureResponderEvent,
     gestureState: PanResponderGestureState
-  ) => {
-    if (disabled) {
-      return;
-    }
-    onComplete(_calculateValue(gestureState));
-  };
+  ) => handleChange(gestureState);
+
   // End PanResponder handlers
   // Value connected to state, slider height Animated Value, ballHeight Animated Value, panResponder
   const panResponder = React.useRef(

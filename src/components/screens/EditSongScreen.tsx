@@ -5,6 +5,7 @@ import { Button, Counter, FormField } from '../atoms';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useSong } from '../../hooks';
 
 interface EditSongScreenProps {
   route: {
@@ -17,12 +18,24 @@ interface EditSongScreenProps {
 export const EditSongScreen = ({ route }: EditSongScreenProps) => {
   const { song } = route.params;
   const navigation = useNavigation();
-  const [songName, setSongName] = useState(song?.name || 'Unnamed');
-  const [bpm, setBpm] = useState(song?.bpm || 120);
+  const { updateSongDetails, fetchSongs } = useSong();
+  const [updatedSong, setUpdatedSong] = useState<Song>(song);
+  const [isUpdatingSong, setIsUpdatingSong] = useState<boolean>(false);
 
-  const saveSong = useCallback(() => {
-    console.log('Song would be saved');
-  }, []);
+  const saveSong = useCallback(async () => {
+    if (!song?.id || !updatedSong) {
+      return;
+    }
+    setIsUpdatingSong(true);
+    await updateSongDetails(updatedSong);
+    await fetchSongs();
+    setIsUpdatingSong(false);
+    navigation.goBack();
+  }, [fetchSongs, navigation, song?.id, updateSongDetails, updatedSong]);
+
+  const updateSongValue = (key: string, value: any) => {
+    setUpdatedSong((state) => ({ ...state, [key]: value }));
+  };
 
   if (!song) {
     return null;
@@ -33,16 +46,16 @@ export const EditSongScreen = ({ route }: EditSongScreenProps) => {
       <FormField
         label="Name"
         type="alphanumeric"
-        value={songName}
-        onChangeText={(text) => setSongName(text)}
+        value={updatedSong?.name}
+        onChangeText={(text) => updateSongValue('name', text)}
         maxLength={30}
       />
       <Counter
-        value={bpm}
+        value={updatedSong?.bpm}
         min={80}
         max={150}
         label="Bpm"
-        onChange={(value) => setBpm(value)}
+        onChange={(value) => updateSongValue('bpm', value)}
       />
       <View style={styles.buttonsContainer}>
         <Button
@@ -57,6 +70,7 @@ export const EditSongScreen = ({ route }: EditSongScreenProps) => {
           text="Save"
           Icon={<Ionicons name="save-sharp" size={20} />}
           onPress={saveSong}
+          isLoading={isUpdatingSong}
         />
       </View>
     </View>

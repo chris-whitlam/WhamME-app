@@ -22,41 +22,50 @@ const Counter = ({
   const [intervalId, setIntervalId] = useState<number | undefined>();
 
   useEffect(() => {
-    onChange && onChange(localValue);
-  }, [localValue, onChange]);
+    if (onChange) {
+      onChange(localValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localValue]);
 
-  const decrement = () =>
-    setLocalValue((currentValue) => {
-      const newValue = currentValue - 1;
-      return newValue < min ? currentValue : newValue;
-    });
+  const decrement = useCallback(
+    () =>
+      setLocalValue((currentValue) => {
+        const newValue = currentValue - 1;
+        return newValue < min ? currentValue : newValue;
+      }),
+    [min]
+  );
 
-  const increment = () =>
-    setLocalValue((currentValue) => {
-      const newValue = currentValue + 1;
-      return max !== undefined && newValue > max ? currentValue : newValue;
-    });
+  const increment = useCallback(
+    () =>
+      setLocalValue((currentValue) => {
+        const newValue = currentValue + 1;
+        return max !== undefined && newValue > max ? currentValue : newValue;
+      }),
+    [max]
+  );
 
-  const handleDecrementPressIn = () => {
-    handlePressOut();
-
-    const id = setInterval(decrement, 80);
-    setIntervalId(id);
-  };
-
-  const handleIncrementPressIn = () => {
-    handlePressOut();
-
-    const id = setInterval(increment, 80);
-    setIntervalId(id);
-  };
-
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     if (intervalId) {
       clearInterval(intervalId);
       setIntervalId(undefined);
     }
-  };
+  }, [intervalId]);
+
+  const handleDecrementPressIn = useCallback(() => {
+    handlePressOut();
+
+    const id = setInterval(decrement, 80);
+    setIntervalId(id);
+  }, [decrement, handlePressOut]);
+
+  const handleIncrementPressIn = useCallback(() => {
+    handlePressOut();
+
+    const id = setInterval(increment, 80);
+    setIntervalId(id);
+  }, [handlePressOut, increment]);
 
   return (
     <>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
-import { TextEncoder } from 'text-encoding';
+import { TextDecoder, TextEncoder } from 'text-encoding';
 
 import {
   NativeEventEmitter,
@@ -9,7 +9,6 @@ import {
   PermissionsAndroid,
   Platform
 } from 'react-native';
-import { Buffer } from 'buffer';
 import { WHAMME_SERVICE_UUID } from '../constants';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
@@ -19,6 +18,8 @@ import {
   disconnectFromDevice
 } from '../store/slices/bluetoothSlice';
 import { useToast } from './useToast';
+import { byteArrayToString } from '../utils';
+import { useNavigation } from '@react-navigation/native';
 
 const BleManagerModule = NativeModules.BleManager;
 const BleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -27,6 +28,7 @@ const useBLE = (setupListeners = false) => {
   const { showError } = useToast();
   const textEncoder = useRef(new TextEncoder());
   const dispatch = useAppDispatch();
+  const navigation = useNavigation();
   const { connectionStatus, connectedDevice, isConnected } = useAppSelector(
     (state) => state.bluetooth
   );
@@ -103,9 +105,7 @@ const useBLE = (setupListeners = false) => {
 
       console.log('retrieveServices');
 
-      const info = await BleManager.retrieveServices(whammyDevice.id);
-
-      console.log('retrieveServices success', JSON.stringify(info));
+      await BleManager.retrieveServices(whammyDevice.id);
 
       dispatch(setConnectedDevice(whammyDevice));
     } catch (error) {
@@ -116,24 +116,58 @@ const useBLE = (setupListeners = false) => {
   }, [dispatch, showError]);
 
   const sendMessage = useCallback(
-    async (message: string, characteristicId: string) => {
+    async (
+      message: string,
+      characteristicId: string,
+      shouldNotWait: boolean = false
+    ) => {
       if (!connectedDevice) {
         throw new Error('Must be connected to device');
       }
-      console.log('message', message);
+
       const payloadUint8 = textEncoder.current.encode(message);
       const byteArray = Array.from(payloadUint8);
-      // const buffer = Buffer.from(message);
 
       try {
-        await BleManager.writeWithoutResponse(
-          connectedDevice.id,
-          WHAMME_SERVICE_UUID,
-          characteristicId,
-          byteArray //buffer.toJSON().data
-        );
+        if (shouldNotWait) {
+          await BleManager.writeWithoutResponse(
+            connectedDevice.id,
+            WHAMME_SERVICE_UUID,
+            characteristicId,
+            byteArray
+          );
+        } else {
+          await BleManager.write(
+            connectedDevice.id,
+            WHAMME_SERVICE_UUID,
+            characteristicId,
+            byteArray
+          );
+        }
       } catch (e) {
         console.log(JSON.stringify(e));
+        throw new Error('Something went wrong');
+      }
+    },
+    [connectedDevice]
+  );
+
+  const fetchData = useCallback(
+    async (characteristicId: string) => {
+      if (!connectedDevice) {
+        throw new Error('Must be connected to device');
+      }
+
+      try {
+        const result: any = await BleManager.read(
+          connectedDevice.id,
+          WHAMME_SERVICE_UUID,
+          characteristicId
+        );
+
+        return byteArrayToString(result);
+      } catch (e) {
+        console.log('error', JSON.stringify(e));
         throw new Error('Something went wrong');
       }
     },
@@ -162,25 +196,28 @@ const useBLE = (setupListeners = false) => {
       return;
     }
 
-    let stopListener = BleManagerEmitter.addListener('BleManagerStopScan', () =>
-      handleScanStopped()
+    let stopScanListener = BleManagerEmitter.addListener(
+      'BleManagerStopScan',
+      () => handleScanStopped()
     );
 
     return () => {
-      stopListener.remove();
-      // handlerDiscover.remove();
+      if (stopScanListener) {
+        stopScanListener.remove();
+      }
     };
   }, [dispatch, handleScanStopped, setupListeners]);
 
   return {
+    isScanning,
+    isConnected,
+    connectedDevice,
+    connectionStatus,
     startScan,
     stopScan,
     sendMessage,
     disconnect,
-    isScanning,
-    isConnected,
-    connectedDevice,
-    connectionStatus
+    fetchData
   };
 };
 

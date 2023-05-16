@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   PressableProps,
   StyleProp,
@@ -15,6 +16,7 @@ type ButtonProps = {
   style?: StyleProp<ViewStyle>;
   isActive?: boolean;
   Icon?: React.ReactNode;
+  isLoading?: boolean;
 } & PressableProps &
   React.RefAttributes<View>;
 
@@ -23,16 +25,21 @@ export default function Button({
   style,
   isActive = true,
   Icon = null,
+  isLoading = false,
   onPress
 }: ButtonProps) {
   let buttonStyles = [styles.button, style];
 
-  if (isActive) {
+  if (isActive && !isLoading) {
     buttonStyles = [...buttonStyles, styles.active];
   }
 
+  if (isLoading) {
+    Icon = <ActivityIndicator size="small" color={colors.text} />;
+  }
+
   return (
-    <Pressable style={buttonStyles} onPress={onPress}>
+    <Pressable style={buttonStyles} onPress={onPress} disabled={isLoading}>
       {Icon}
       <Text style={styles.text}>{text}</Text>
     </Pressable>

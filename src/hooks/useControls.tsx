@@ -14,7 +14,6 @@ export const useControls = () => {
 
   const setProgram = useCallback(
     async (programId: number) => {
-      console.log(programId);
       try {
         await sendMessage(programId.toString(), PROGRAM_CHARACTERISTIC_UUID);
         setCurrentProgram(programId);
@@ -27,18 +26,12 @@ export const useControls = () => {
 
   const setExpression = useCallback(
     async (value: number) => {
-      try {
-        if (expression === value) {
-          return;
-        }
-
-        await sendMessage(value.toString(), EXPRESSION_CHARACTERISTIC_UUID);
-        setCurrentExpression(value);
-      } catch (error: any) {
-        showError(error.message);
-      }
+      sendMessage(value.toString(), EXPRESSION_CHARACTERISTIC_UUID, true).catch(
+        (error) => showError(error.message)
+      );
+      setCurrentExpression(value);
     },
-    [expression, sendMessage, showError]
+    [sendMessage, showError]
   );
 
   return { program, expression, setExpression, setProgram };

@@ -1,27 +1,39 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 
 import { SongListItem } from '../molecules/songs';
 import { Song } from '../../types';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useSong } from '../../hooks';
 
-const songs: Song[] = [
-  {
-    id: 1,
-    name: 'Map of the Problematic',
-    bpm: 120,
-    canOpenInSequencer: false
-  },
-  {
-    id: 2,
-    name: 'Unsustainable',
-    bpm: 120,
-    canOpenInSequencer: false
-  }
-];
+// const songs: Song[] = [
+//   {
+//     id: 1,
+//     name: 'Map of the Problematic',
+//     bpm: 120,
+//     canOpenInSequencer: false
+//   },
+//   {
+//     id: 2,
+//     name: 'Unsustainable',
+//     bpm: 120,
+//     canOpenInSequencer: false
+//   }
+// ];
 
 export const SongsScreen = () => {
-  const { onSelectSong, onEditSong, onPlaySong, onStopSong } = useSong();
+  const {
+    songs,
+    onSelectSong,
+    onEditSong,
+    onPlaySong,
+    onStopSong,
+    fetchSongs
+  } = useSong();
+
+  useEffect(() => {
+    fetchSongs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const Seperator = useCallback(() => <View style={styles.seperator} />, []);
 
